@@ -24,6 +24,11 @@ const defineUserModel = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    role: {
+      type: DataTypes.ENUM("admin", "society", "accountant"),
+      allowNull: false,
+      defaultValue: "society", // change if needed
+    },
     refreshToken: {
       type: DataTypes.TEXT,
       allowNull: true,
