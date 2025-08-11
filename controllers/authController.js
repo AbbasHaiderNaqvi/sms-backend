@@ -21,6 +21,46 @@ export const authController = async (req, res) => {
       return res.status(409).json({ error: "User already exists" });
     }
 
+     let permissions = {
+      feeManagement: {
+        viewStatus: false,
+        viewReports: false,
+        generateVouchers: false,
+        processPayments: false,
+        applyDiscounts: false,
+        manageSettings: false
+      }
+    };
+
+    switch(role) {
+      case 'admin':
+      case 'society':
+      case 'principle':
+        permissions.feeManagement = {
+          viewStatus: true,
+          viewReports: true,
+          generateVouchers: false,
+          processPayments: false,
+          applyDiscounts: false,
+          manageSettings: (role === 'admin') // Only admin can manage settings
+        };
+        break;
+      case 'accountant':
+        permissions.feeManagement = {
+          viewStatus: true,
+          viewReports: true,
+          generateVouchers: true,
+          processPayments: true,
+          applyDiscounts: true,
+          manageSettings: false
+        };
+        break;
+      default:
+        // Society members get view-only access by default
+        permissions.feeManagement.viewStatus = true;
+        permissions.feeManagement.viewReports = true;
+    }
+
     // Create user
     const hashedPassword = await bcrypt.hash(password, 5)
     const newUser = await User.create({
@@ -45,6 +85,7 @@ export const authController = async (req, res) => {
         email: newUser.email,
         accessToken,
         refreshToken,
+        permissions:newUser.permissions,
       }
     });
   } catch (error) {
@@ -89,6 +130,7 @@ export const loginController = async (req, res) => {
           email: exist.email,
           accessToken: accessToken,
           refreshToken: refreshToken,
+          permissions: exist.permissions
         },
       });
     }
@@ -154,7 +196,18 @@ export const updateProfile = async (req, res) => {
 
     await user.save();
 
-    return res.status(200).json("Profile Updated Successfully")
+    return res.status(200).json({
+      
+      Message:"Profile Updated Successfully",
+      user:{
+        id:user.id,
+        username:user.username,
+        email:user.email,
+        role:user.role,
+        permissions:user.permissions,
+      }
+      
+    })
   }
   catch (e) {
     return res.status(500).json("internal error!")

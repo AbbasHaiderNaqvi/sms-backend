@@ -25,13 +25,27 @@ const defineUserModel = (sequelize) => {
       allowNull: false,
     },
     role: {
-      type: DataTypes.ENUM("admin", "society", "accountant"),
+      type: DataTypes.ENUM("admin", "accountant", "principle", "soceity"),
       allowNull: false,
-      defaultValue: "society", // change if needed
+      defaultValue: "admin", // change if needed
     },
     refreshToken: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+     permissions: {
+      type: DataTypes.JSON,
+      allowNull: false,
+      defaultValue: {
+        feeManagement: {
+          viewStatus: false,       // View fee status (paid/unpaid)
+          viewReports: false,      // View detailed reports
+          generateVouchers: false,  // Generate fee vouchers
+          processPayments: false,   // Record payments
+          applyDiscounts: false,   // Apply discounts
+          manageSettings: false    // Manage fee structure
+        }
+      }
     },
   });
 
