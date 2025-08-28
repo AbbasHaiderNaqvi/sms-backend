@@ -8,7 +8,7 @@ export const authController = async (req, res) => {
   try {
     console.log(req.body);
 
-    const { username, email, password } = req.body;
+    const { username, email, password , role} = req.body;
 
     // Validation
     if (!username || !email) {
@@ -67,6 +67,7 @@ export const authController = async (req, res) => {
       userName: username, // match your model field
       email,
       password: hashedPassword,
+      role
       // accessToken: accessToken,
       // refreshToken: refreshToken,
 
@@ -83,6 +84,7 @@ export const authController = async (req, res) => {
         id: newUser.id,
         username: newUser.userName,
         email: newUser.email,
+        role:role,
         accessToken,
         refreshToken,
         permissions:newUser.permissions,
@@ -179,7 +181,7 @@ export const refreshController = async (req, res) => {
 };
 
 export const updateProfile = async (req, res) => {
-  const { id, username, email } = req.body;
+  const { id, username, email ,password, role} = req.body;
 
   console.log("id:", id);
   if (!id) {
@@ -193,6 +195,8 @@ export const updateProfile = async (req, res) => {
 
     if (username) { user.userName = username }
     if (email) { user.email = email }
+    if(password) {user.password=password}
+    if (role) {user.role=role}
 
     await user.save();
 

@@ -5,7 +5,13 @@ import router from "./routes/routes.js";
 
 const app = express();
 
-app.use(express.json());
+app.use((req, res, next) => {
+  if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
+    express.json()(req, res, next);
+  } else {
+    next(); // Skip JSON parsing for GET/DELETE/etc.
+  }
+});
 // app.use(cookieParser())
 app.use("/api", router);
 
