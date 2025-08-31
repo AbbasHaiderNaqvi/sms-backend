@@ -25,15 +25,9 @@ const defineUserModel = (sequelize) => {
       allowNull: false,
     },
     role: {
-<<<<<<< Updated upstream
-      type: DataTypes.ENUM("admin", "accountant", "principle", "soceity"),
+      type: DataTypes.ENUM("admin", "accountant", "principle", "soceity", "user"),
       allowNull: false,
-      defaultValue: "admin", // change if needed
-=======
-      type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: 'user'
->>>>>>> Stashed changes
+      defaultValue: "user", // change if needed
     },
     refreshToken: {
       type: DataTypes.TEXT,

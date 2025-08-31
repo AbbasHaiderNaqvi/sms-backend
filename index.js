@@ -2,8 +2,14 @@ import express from "express";
 import {dbConnection} from "./db/dbConnection.js";
 // import cookieParser from "cookie-parser";  
 import router from "./routes/routes.js";
+import cors from "cors";
 
 const app = express();
+
+app.use(cors({
+  origin: "http://localhost:5173",   // your frontend URL
+  credentials: true                  // allow cookies to be sent
+}));
 
 app.use((req, res, next) => {
   if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {

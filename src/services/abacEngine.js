@@ -28,7 +28,6 @@ const evaluateRule = (rule, context) => {
   return true;
 };
 
-<<<<<<< Updated upstream
 export const evaluateAccess = (policies, policyName, context) => {
   const policy = policies[policyName];
   if (!policy) return false;
@@ -40,26 +39,3 @@ export const evaluateAccess = (policies, policyName, context) => {
   }
   return false;
 };
-=======
-// export const evaluateAccess = (policies, policyName, context) => {
-//   const policy = policies[policyName];
-//   if (!policy) return false;
-
-//   // console.log(context, policies, policy)
-
-//   for (const rule of policy.rules) {
-//     if (evaluateRule(rule, context)) {
-//       return rule.effect === "allow";
-//     }
-//   }
-//   return false;
-// };
-
-// services/abacEngine.js
-export const evaluateAccess = (policies, action, context) => {
-  const policy = policies[action];
-  if (!policy) return false;
-
-  return policy.roles.includes(context.user.role);
-};
->>>>>>> Stashed changes

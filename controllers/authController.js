@@ -10,6 +10,9 @@ export const authController = async (req, res) => {
 
     const { username, email, password , role} = req.body;
 
+    // console.log("Incoming body:", req.body);
+
+
     // Validation
     if (!username || !email) {
       return res.status(400).json({ error: "All fields are required" });
@@ -97,10 +100,10 @@ export const authController = async (req, res) => {
 };
 
 export const loginController = async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    const exist = await User.findOne({ where: { userName: username } });
+    const exist = await User.findOne({ where: { email: email } });
 
     if (!exist) {
       return res.status(404).json({ error: "User not found" });

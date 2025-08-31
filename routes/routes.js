@@ -1,15 +1,11 @@
 import { Router } from "express";
-<<<<<<< Updated upstream
 import { authController , loginController, refreshController, updateProfile , deleteUser} from "../controllers/authController.js";
 import { 
   viewFeeStatus, 
   generateVoucher 
 } from '../controllers/fee management/feeControllers.js';
-=======
-import { authController, loginController, refreshController, updateProfile, deleteUser } from "../controllers/authController.js";
-import { viewFeeStatus, generateVoucher } from "../controllers/fee management/feeControllers.js";
+
 import { authenticateJWT } from "../controllers/auth/authmidleware.js";
->>>>>>> Stashed changes
 
 const router = Router();
 
