@@ -1,14 +1,11 @@
-import defineUserModel from "../model/userModel.js"
-// import { User } from "../db/dbConnection.js";
+// controllers/authController.js
 import bcrypt from "bcryptjs";
-import { generateAccessToken, generateRefreshToken } from "./auth/auth.js";
-import jwt from "jsonwebtoken"
-
+import jwt from "jsonwebtoken";
 import { getUserModel } from "../db/dbConnection.js";
-// import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
+import { generateAccessToken, generateRefreshToken } from "./auth/auth.js";
 
 export const authController = async (req, res) => {
-  const User = getUserModel(); // ✅ use getter
+  const User = getUserModel();
   try {
     const { username, email, password, role } = req.body;
 
@@ -32,7 +29,6 @@ export const authController = async (req, res) => {
       }
     };
 
-    // Assign permissions based on role
     switch (role.toLowerCase()) {
       case "admin":
       case "principle":
@@ -61,7 +57,7 @@ export const authController = async (req, res) => {
         permissions.feeManagement.viewReports = true;
     }
 
-    const hashedPassword = await bcrypt.hash(password, 5);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
       userName: username,
@@ -88,79 +84,60 @@ export const authController = async (req, res) => {
         permissions: newUser.permissions
       }
     });
-
   } catch (error) {
     console.error("Registration Error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
 
+// LOGIN
 export const loginController = async (req, res) => {
+  const User = getUserModel();
   const { email, password } = req.body;
 
   try {
-    const exist = await User.findOne({ where: { email: email } });
+    const exist = await User.findOne({ where: { email } });
 
-    if (!exist) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (!exist) return res.status(404).json({ error: "User not found" });
 
-    if (exist != null) {
-      const isvalid = await bcrypt.compare(password, exist.password);
-      if (!isvalid) {
-        return res.status(401).json("invalid credentials", exist);
+    const isValid = await bcrypt.compare(password, exist.password);
+    if (!isValid) return res.status(401).json({ error: "Invalid credentials" });
+
+    const accessToken = generateAccessToken(exist.dataValues);
+    const refreshToken = generateRefreshToken(exist.dataValues);
+
+    await exist.update({ refreshToken });
+
+    return res.status(200).json({
+      message: "Logged in successfully",
+      user: {
+        id: exist.id,
+        username: exist.userName,
+        email: exist.email,
+        accessToken,
+        refreshToken,
+        permissions: exist.permissions
       }
-
-      const accessToken = await generateAccessToken(exist.dataValues);
-      const refreshToken = await generateRefreshToken(exist.dataValues);
-
-      exist.update({ refreshToken: refreshToken })
-
-      // res.cookie("refreshToken", refreshToken,{httpOnly:true, secure:true})
-
-
-      await exist.save();
-
-      console.log("Updated refreshToken:", exist.refreshToken);
-
-      return res.status(200).json({
-        message: "Logged in successfully",
-        user: {
-          id: exist.id,
-          username: exist.userName,
-          email: exist.email,
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-          permissions: exist.permissions
-        },
-      });
-    }
-
-  } catch (e) {
-    return res.status(500).json("internal error!");
+    });
+  } catch (error) {
+    console.error("Login Error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
+// REFRESH TOKEN
 export const refreshController = async (req, res) => {
-  const { refreshToken } = req.body; // or extract from headers
+  const User = getUserModel();
+  const { refreshToken } = req.body;
 
-  console.log("Received refreshToken:", refreshToken);
-
-  if (!refreshToken) {
-    return res.status(403).json("Token is missing");
-  }
+  if (!refreshToken) return res.status(403).json({ error: "Token is missing" });
 
   try {
     const user = await User.findOne({ where: { refreshToken } });
+    if (!user) return res.status(403).json({ error: "Invalid refresh token" });
 
-    if (!user) {
-      return res.status(403).json("No user found with this token");
-    }
-
-    jwt.verify(refreshToken, "cdef", (err, decoded) => {
-      if (err) {
-        return res.status(403).json("Invalid refresh token");
-      }
+    jwt.verify(refreshToken, process.env.REFRESH_SECRET || "cdef", (err) => {
+      if (err) return res.status(403).json({ error: "Invalid refresh token" });
 
       const newAccessToken = generateAccessToken(user.dataValues);
       return res.status(200).json({
@@ -170,70 +147,65 @@ export const refreshController = async (req, res) => {
           username: user.userName,
           email: user.email,
           accessToken: newAccessToken,
-          refreshToken: user.refreshToken,
-        },
+          refreshToken: user.refreshToken
+        }
       });
     });
-  } catch (e) {
-    return res.status(500).json("Internal error");
+  } catch (error) {
+    console.error("Refresh Error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
+// UPDATE PROFILE
 export const updateProfile = async (req, res) => {
-  const { id, username, email ,password, role} = req.body;
+  const User = getUserModel();
+  const { id, username, email, password, role } = req.body;
 
-  console.log("id:", id);
-  if (!id) {
-    return res.status(400).josn("Id is missing")
-  }
+  if (!id) return res.status(400).json({ error: "Id is missing" });
+
   try {
-    const user = await User.findOne({ where: { id } })
-    if (!user) {
-      return res.status(404).json("no user found with this id!")
-    }
+    const user = await User.findOne({ where: { id } });
+    if (!user) return res.status(404).json({ error: "No user found with this id!" });
 
-    if (username) { user.userName = username }
-    if (email) { user.email = email }
-    if(password) {user.password=password}
-    if (role) {user.role=role}
+    if (username) user.userName = username;
+    if (email) user.email = email;
+    if (password) user.password = await bcrypt.hash(password, 10);
+    if (role) user.role = role;
 
     await user.save();
 
     return res.status(200).json({
-      
-      Message:"Profile Updated Successfully",
-      user:{
-        id:user.id,
-        username:user.username,
-        email:user.email,
-        role:user.role,
-        permissions:user.permissions,
+      message: "Profile updated successfully",
+      user: {
+        id: user.id,
+        username: user.userName,
+        email: user.email,
+        role: user.role,
+        permissions: user.permissions
       }
-      
-    })
-  }
-  catch (e) {
-    return res.status(500).json("internal error!")
+    });
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
+// DELETE USER
 export const deleteUser = async (req, res) => {
+  const User = getUserModel();
   const { id } = req.body;
-  console.log("ID", id)
-  try {
-    const user = await User.findOne({ where: { id } })
-    if (!user) {
-      return res.status(404).json("no User Found with this id")
-    }
-    await user.destroy();
 
-    return res.status(200).json("user deleted successfully")
-  }
-  catch (e) {
-    return res.status(500).json("internal error")
+  if (!id) return res.status(400).json({ error: "Id is missing" });
+
+  try {
+    const user = await User.findOne({ where: { id } });
+    if (!user) return res.status(404).json({ error: "No user found with this id!" });
+
+    await user.destroy();
+    return res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Delete User Error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
-
-

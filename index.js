@@ -1,5 +1,5 @@
-import 'dotenv/config';  // automatically loads .env
-
+// index.js
+import 'dotenv/config';
 import express from "express";
 import { dbConnection } from "./db/dbConnection.js";
 import router from "./routes/routes.js";
@@ -21,6 +21,7 @@ const startServer = async () => {
     });
   } catch (err) {
     console.error("❌ Server startup failed:", err);
+    process.exit(1); // crash explicitly if DB fails
   }
 };
 

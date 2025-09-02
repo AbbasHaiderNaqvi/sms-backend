@@ -1,3 +1,4 @@
+// db/dbConnection.js
 import { Sequelize } from "sequelize";
 import defineUserModel from "../model/userModel.js";
 import defineStudentModel from "../model/studentModel.js";
@@ -20,6 +21,7 @@ const dbConnection = async () => {
         rejectUnauthorized: false,
       },
     },
+    logging: console.log, // optional for debugging
   });
 
   try {
@@ -30,6 +32,7 @@ const dbConnection = async () => {
     User = defineUserModel(sequelize);
     Student = defineStudentModel(sequelize);
 
+    // Sync tables (alter: true ensures schema matches model)
     await sequelize.sync({ alter: true });
     console.log("🟢 Models synced successfully");
   } catch (err) {
@@ -38,7 +41,7 @@ const dbConnection = async () => {
   }
 };
 
-// Getter functions
+// Getter functions to safely access models after async init
 const getUserModel = () => {
   if (!User) throw new Error("❌ User model is not initialized yet!");
   return User;
