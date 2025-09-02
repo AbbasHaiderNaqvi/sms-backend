@@ -1,30 +1,27 @@
 import defineUserModel from "../model/userModel.js"
-import { User } from "../db/dbConnection.js";
+// import { User } from "../db/dbConnection.js";
 import bcrypt from "bcryptjs";
 import { generateAccessToken, generateRefreshToken } from "./auth/auth.js";
 import jwt from "jsonwebtoken"
 
+import { getUserModel } from "../db/dbConnection.js";
+// import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
+
 export const authController = async (req, res) => {
+  const User = getUserModel(); // ✅ use getter
   try {
-    console.log(req.body);
+    const { username, email, password, role } = req.body;
 
-    const { username, email, password , role} = req.body;
-
-    // console.log("Incoming body:", req.body);
-
-
-    // Validation
-    if (!username || !email) {
+    if (!username || !email || !password || !role) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
     const existingUser = await User.findOne({ where: { userName: username } });
-
-    if (existingUser !== null) {
+    if (existingUser) {
       return res.status(409).json({ error: "User already exists" });
     }
 
-     let permissions = {
+    let permissions = {
       feeManagement: {
         viewStatus: false,
         viewReports: false,
@@ -35,20 +32,21 @@ export const authController = async (req, res) => {
       }
     };
 
-    switch(role) {
-      case 'admin':
-      case 'society':
-      case 'principle':
+    // Assign permissions based on role
+    switch (role.toLowerCase()) {
+      case "admin":
+      case "principle":
+      case "society":
         permissions.feeManagement = {
           viewStatus: true,
           viewReports: true,
           generateVouchers: false,
           processPayments: false,
           applyDiscounts: false,
-          manageSettings: (role === 'admin') // Only admin can manage settings
+          manageSettings: role.toLowerCase() === "admin"
         };
         break;
-      case 'accountant':
+      case "accountant":
         permissions.feeManagement = {
           viewStatus: true,
           viewReports: true,
@@ -59,21 +57,18 @@ export const authController = async (req, res) => {
         };
         break;
       default:
-        // Society members get view-only access by default
         permissions.feeManagement.viewStatus = true;
         permissions.feeManagement.viewReports = true;
     }
 
-    // Create user
-    const hashedPassword = await bcrypt.hash(password, 5)
+    const hashedPassword = await bcrypt.hash(password, 5);
+
     const newUser = await User.create({
-      userName: username, // match your model field
+      userName: username,
       email,
       password: hashedPassword,
-      role
-      // accessToken: accessToken,
-      // refreshToken: refreshToken,
-
+      role,
+      permissions
     });
 
     const accessToken = generateAccessToken(newUser.dataValues);
@@ -82,17 +77,18 @@ export const authController = async (req, res) => {
     await newUser.update({ refreshToken });
 
     return res.status(201).json({
-      message: "User registered and logged in",
+      message: "User registered successfully",
       user: {
         id: newUser.id,
         username: newUser.userName,
         email: newUser.email,
-        role:role,
+        role: newUser.role,
         accessToken,
         refreshToken,
-        permissions:newUser.permissions,
+        permissions: newUser.permissions
       }
     });
+
   } catch (error) {
     console.error("Registration Error:", error);
     return res.status(500).json({ error: "Internal server error" });

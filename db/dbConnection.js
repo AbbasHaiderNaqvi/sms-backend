@@ -2,22 +2,22 @@ import { Sequelize } from "sequelize";
 import defineUserModel from "../model/userModel.js";
 import defineStudentModel from "../model/studentModel.js";
 
-// Export models
-export let User = null;
-export let Student = null;
+let User = null;
+let Student = null;
+let sequelize = null;
 
 const dbConnection = async () => {
   if (!process.env.DATABASE_URL) {
     throw new Error("❌ DATABASE_URL is not defined! Please set it in Railway variables.");
   }
 
-  const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: "postgres",
     protocol: "postgres",
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false, // Important for Railway SSL
+        rejectUnauthorized: false,
       },
     },
   });
@@ -30,13 +30,23 @@ const dbConnection = async () => {
     User = defineUserModel(sequelize);
     Student = defineStudentModel(sequelize);
 
-    // Sync tables
     await sequelize.sync({ alter: true });
     console.log("🟢 Models synced successfully");
   } catch (err) {
     console.error("❌ Unable to connect to the database:", err);
-    throw err; // Crash if DB connection fails
+    throw err;
   }
 };
 
-export { dbConnection };
+// Getter functions
+const getUserModel = () => {
+  if (!User) throw new Error("❌ User model is not initialized yet!");
+  return User;
+};
+
+const getStudentModel = () => {
+  if (!Student) throw new Error("❌ Student model is not initialized yet!");
+  return Student;
+};
+
+export { dbConnection, getUserModel, getStudentModel };
