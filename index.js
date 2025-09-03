@@ -6,6 +6,9 @@ import cors from "cors";
 
 const app = express();
 
+// Debug to see what Railway is providing
+console.log('PORT environment variable:', process.env.PORT);
+
 // CORS Configuration
 app.use(cors({
   origin: [
@@ -28,14 +31,15 @@ app.get('/health', (req, res) => {
 
 app.use("/api", router);
 
-// ✅ Use port 8081 to match Railway configuration
-const PORT = process.env.PORT || 8081;
+// ✅ Use fallback port for local development, Railway will provide the PORT
+const PORT = process.env.PORT || 3000;
+console.log('Starting server on port:', PORT);
 
 const startServer = async () => {
   try {
     await dbConnection();
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`✅ Server successfully running on port ${PORT}`);
     });
   } catch (err) {
     console.error("❌ Server startup failed:", err);
