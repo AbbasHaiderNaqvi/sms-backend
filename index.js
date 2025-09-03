@@ -28,8 +28,8 @@ app.get('/health', (req, res) => {
 
 app.use("/api", router);
 
-// ✅ CRITICAL: Use the PORT from environment variable without fallback
-const PORT = process.env.PORT;
+// ✅ Use Railway's port - they provide it automatically
+const PORT = process.env.PORT || 3000;
 
 // ✅ Bind to all network interfaces for Railway
 const startServer = async () => {
