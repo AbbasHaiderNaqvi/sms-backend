@@ -6,7 +6,7 @@ import cors from "cors";
 
 const app = express();
 
-// Simple CORS configuration
+// CORS Configuration
 app.use(cors({
   origin: [
     'https://sms-frontend-pbvphypwl-furqan-hassans-projects-fa4b821f.vercel.app',
@@ -17,21 +17,25 @@ app.use(cors({
 
 app.use(express.json());
 
-
-// Add this before your routes
+// Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    message: 'Server is running successfully'
+  });
 });
-
 
 app.use("/api", router);
 
-const PORT = process.env.PORT || 8081;
+// ✅ CRITICAL: Use the PORT from environment variable without fallback
+const PORT = process.env.PORT;
 
+// ✅ Bind to all network interfaces for Railway
 const startServer = async () => {
   try {
     await dbConnection();
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
   } catch (err) {
