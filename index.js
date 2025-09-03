@@ -28,10 +28,9 @@ app.get('/health', (req, res) => {
 
 app.use("/api", router);
 
-// ✅ Use Railway's port - they provide it automatically
-const PORT = process.env.PORT || 3000;
+// ✅ Use port 8081 to match Railway configuration
+const PORT = process.env.PORT || 8081;
 
-// ✅ Bind to all network interfaces for Railway
 const startServer = async () => {
   try {
     await dbConnection();
